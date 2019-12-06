@@ -1,11 +1,13 @@
 package org.clulab.taxero
 
+import scala.io.Source
 import scala.collection.mutable
 import ai.lum.odinson._
 import ai.lum.odinson.lucene.search._
 import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
+import ai.lum.common.TryWithResources.using
 import org.clulab.embeddings.word2vec.Word2Vec
 
 case class Match(
@@ -142,19 +144,30 @@ class TaxonomyReader(
   }
 
   def mkPattern(tokens: Array[String]): String = {
-    tokens.map(t => s"\"${t.escapeJava}\"").mkString(" ")
+    tokens.map(t => "\"" + t.escapeJava + "\"").mkString(" ")
   }
 
   def mkHypernymQueries(tokens: Array[String]): Array[OdinsonQuery] = {
-    ???
+    mkQueries(tokens, "hypernym-rules.txt")
   }
 
   def mkHyponymQueries(tokens: Array[String]): Array[OdinsonQuery] = {
-    ???
+    mkQueries(tokens, "hyponym-rules.txt")
   }
 
   def mkCohyponymQueries(tokens: Array[String]): Array[OdinsonQuery] = {
-    ???
+    mkQueries(tokens, "cohyponym-rules.txt")
+  }
+
+  def mkQueries(tokens: Array[String], rulefile: String): Array[OdinsonQuery] = {
+    using (Source.fromResource(rulefile)) { rules =>
+      val pattern = mkPattern(tokens)
+      val variables = Map("pattern" -> pattern)
+      rules.mkString
+        .replaceVariables(variables)
+        .split("""\s*\n\s*\n\s*""")
+        .map(extractorEngine.compiler.compile)
+    }
   }
 
 }
