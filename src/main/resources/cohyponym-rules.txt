@@ -1,0 +1,1 @@
+${pattern} <conj? >conj [chunk=B-NP] [chunk=I-NP]*
