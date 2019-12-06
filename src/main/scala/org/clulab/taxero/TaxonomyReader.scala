@@ -4,72 +4,96 @@ import scala.collection.mutable
 import ai.lum.odinson._
 import ai.lum.odinson.lucene.search._
 import ai.lum.common.StringUtils._
+import ai.lum.common.ConfigUtils._
+import ai.lum.common.ConfigFactory
+import org.clulab.embeddings.word2vec.Word2Vec
 
 case class Match(
-  result: String,
+  result: Array[String],
   count: Int,
 )
 
 case class ScoredMatch(
-  query: String,
-  result: String,
+  query: Array[String],
+  result: Array[String],
   score: Double,
 )
 
+class Counter {
+  val counts = mutable.HashMap.empty[Array[String], Int]
+  def keys = counts.keys
+  def add(key: Array[String]): Unit = add(key, 1)
+  def add(key: Array[String], count: Int): Unit = {
+    counts(key) = counts.getOrElse(key, 0) + count
+  }
+  def getMatches: Array[Match] = {
+    counts
+      .toIterator
+      .map { case (m, c) => Match(m, c) }
+      .toArray
+  }
+}
+
+object TaxonomyReader {
+  def fromConfig: TaxonomyReader = {
+    val config = ConfigFactory.load()
+    val extractorEngine = ExtractorEngine.fromConfig
+    val wordEmbeddings = new Word2Vec(config[String]("taxero.wordEmbeddings"))
+    val contextEmbeddings = new Word2Vec(config[String]("taxero.contextEmbeddings"))
+    new TaxonomyReader(extractorEngine, wordEmbeddings, contextEmbeddings)
+  }
+}
+
 class TaxonomyReader(
   val extractorEngine: ExtractorEngine,
+  val wordEmbeddings: Word2Vec,
+  val contextEmbeddings: Word2Vec,
 ) {
 
-  def getHypernyms(pattern: String): Array[Match] = {
-    getMatches(mkHypernymQueries(pattern))
+  def getHypernyms(tokens: Array[String]): Array[Match] = {
+    getMatches(mkHypernymQueries(tokens))
   }
 
-  def getRankedHypernyms(pattern: String): Array[ScoredMatch] = {
-    rankMatches(pattern, getHypernyms(pattern))
+  def getRankedHypernyms(tokens: Array[String]): Array[ScoredMatch] = {
+    rankMatches(tokens, getHypernyms(tokens))
   }
 
-  def getHyponyms(pattern: String): Array[Match] = {
-    getMatches(mkHyponymQueries(pattern))
+  def getHyponyms(tokens: Array[String]): Array[Match] = {
+    getMatches(mkHyponymQueries(tokens))
   }
 
-  def getRankedHyponyms(pattern: String): Array[ScoredMatch] = {
-    rankMatches(pattern, getHyponyms(pattern))
+  def getRankedHyponyms(tokens: Array[String]): Array[ScoredMatch] = {
+    rankMatches(tokens, getHyponyms(tokens))
   }
 
-  def getCohyponyms(pattern: String): Array[Match] = {
-    getMatches(mkCohyponymQueries(pattern))
+  def getCohyponyms(tokens: Array[String]): Array[Match] = {
+    getMatches(mkCohyponymQueries(tokens))
   }
 
-  def getRankedCohyponyms(pattern: String): Array[ScoredMatch] = {
-    rankMatches(pattern, getCohyponyms(pattern))
+  def getRankedCohyponyms(tokens: Array[String]): Array[ScoredMatch] = {
+    rankMatches(tokens, getCohyponyms(tokens))
   }
 
-  def getExpandedHypernyms(pattern: String, n: Int): Array[ScoredMatch] = {
+  def getExpandedHypernyms(pattern: Array[String], n: Int): Array[ScoredMatch] = {
     // start query set with the provided query
     val allQueries = mutable.HashSet(pattern)
     // add the n closest cohyponyms to the query set
     allQueries ++= getRankedCohyponyms(pattern).take(n).map(_.result)
     // start an empty map for the hypernym candidate counts
-    val hypernymCounts = mutable.HashMap.empty[String, Int]
+    val hypernymCounts = new Counter
     // count hypernym candidates
     for {
       q <- allQueries
       m <- getHypernyms(q)
-    } hypernymCounts(m.result) = m.count + hypernymCounts.getOrElse(m.result, 0)
+    } hypernymCounts.add(m.result, m.count)
     // add the heads of each hypernym to the results
-    for (hyper <- hypernymCounts.keys) {
-      val head = getHead(hyper)
-      hypernymCounts(head) = 1 + hypernymCounts.getOrElse(head, 0)
+    for (candidate <- hypernymCounts.keys) {
+      hypernymCounts.add(getHead(candidate))
     }
     // add the head of the original pattern to the results
-    val patternHead = getHead(pattern)
-    hypernymCounts(patternHead) = 1 + hypernymCounts.getOrElse(patternHead, 0)
+    hypernymCounts.add(getHead(pattern))
     // return scored hypernyms
-    val allHypernyms = hypernymCounts
-      .toIterator
-      .map { case (candidate, count) => Match(candidate, count) }
-      .toArray
-    rankMatches(pattern, allHypernyms)
+    rankMatches(pattern, hypernymCounts.getMatches)
   }
 
   def getMatches(queries: Array[OdinsonQuery]): Array[Match] = {
@@ -79,47 +103,57 @@ class TaxonomyReader(
       results = extractorEngine.query(query)
       scoreDoc <- results.scoreDocs
       odinsonMatch <- scoreDoc.matches
-      result = extractorEngine.getString(odinsonMatch)
+      result = extractorEngine.getTokens(odinsonMatch)
     } yield result
-    // count matches
-    val counts = mutable.HashMap.empty[String, Int]
-    for (m <- matches) {
-      counts(m) = 1 + counts.getOrElse(m, 0)
-    }
-    // return counted matches
-    counts
-      .toIterator
-      .map { case (m, c) => Match(m, c) }
-      .toArray
+    // count matches and return them
+    val counter = new Counter
+    matches.foreach(counter.add)
+    counter.getMatches
   }
 
-  def rankMatches(query: String, matches: Array[Match]): Array[ScoredMatch] = {
+  def rankMatches(query: Array[String], matches: Array[Match]): Array[ScoredMatch] = {
     matches
       .map(m => scoreMatch(query, m))
       .sortBy(-_.score)
   }
 
-  def scoreMatch(query: String, m: Match): ScoredMatch = {
+  def scoreMatch(query: Array[String], m: Match): ScoredMatch = {
     ScoredMatch(query, m.result, similarityScore(query, m.result, m.count))
   }
 
-  def getHead(query: String): String = {
+  def mkEmbedding(tokens: Array[String]): Array[Double] = {
+    wordEmbeddings.makeCompositeVector(tokens)
+  }
+
+  def getHead(tokens: Array[String]): Array[String] = {
+    Array(tokens.last)
+  }
+
+  def similarityScore(query: Array[String], result: Array[String], freq: Double = 1): Double = {
+    // 2. get embedding for MWEs
+    //    a. embedding of head word
+    //    b. average of all word embeddings
+    //    c. weighted average (more weight to the head)
+    //    d. robert's model
+    // 3. frequency * cosineSimilarity(emb(query), emb(result))
+    val q = mkEmbedding(query)
+    val r = mkEmbedding(result)
+    freq * Word2Vec.dotProduct(q, r)
+  }
+
+  def mkPattern(tokens: Array[String]): String = {
+    tokens.map(t => s"\"${t.escapeJava}\"").mkString(" ")
+  }
+
+  def mkHypernymQueries(tokens: Array[String]): Array[OdinsonQuery] = {
     ???
   }
 
-  def similarityScore(query: String, result: String, freq: Double = 1): Double = {
+  def mkHyponymQueries(tokens: Array[String]): Array[OdinsonQuery] = {
     ???
   }
 
-  def mkHypernymQueries(pattern: String): Array[OdinsonQuery] = {
-    ???
-  }
-
-  def mkHyponymQueries(pattern: String): Array[OdinsonQuery] = {
-    ???
-  }
-
-  def mkCohyponymQueries(pattern: String): Array[OdinsonQuery] = {
+  def mkCohyponymQueries(tokens: Array[String]): Array[OdinsonQuery] = {
     ???
   }
 
