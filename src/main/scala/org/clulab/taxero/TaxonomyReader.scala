@@ -161,8 +161,10 @@ class TaxonomyReader(
 
   def mkQueries(tokens: Seq[String], rulefile: String): Seq[OdinsonQuery] = {
     using (Source.fromResource(rulefile)) { rules =>
-      val pattern = mkPattern(tokens)
-      val variables = Map("pattern" -> pattern)
+      val variables = Map(
+        "query" -> mkPattern(tokens),
+        "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
+      )
       rules.mkString
         .replaceVariables(variables)
         .split("""\s*\n\s*\n\s*""")

@@ -1,1 +1,1 @@
-${pattern} <conj? >conj [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?
+${query} <conj? >conj ${chunk}
