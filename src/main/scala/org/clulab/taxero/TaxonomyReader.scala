@@ -18,6 +18,7 @@ case class Match(
 case class ScoredMatch(
   query: Seq[String],
   result: Seq[String],
+  count: Int,
   score: Double,
 )
 
@@ -120,7 +121,7 @@ class TaxonomyReader(
   }
 
   def scoreMatch(query: Seq[String], m: Match): ScoredMatch = {
-    ScoredMatch(query, m.result, similarityScore(query, m.result, m.count))
+    ScoredMatch(query, m.result, m.count, similarityScore(query, m.result, m.count))
   }
 
   def mkEmbedding(tokens: Seq[String]): Array[Double] = {
