@@ -1,15 +1,17 @@
 <html>
     <head>
-        <title>Grammar Visualizer</title>
+        <title>Taxero</title>
         <link rel="stylesheet" type="text/css" href="assets/stylesheets/main.css"/>
-        <link rel="stylesheet" type="text/css" href="assets/brat/static/style-vis.css"/>
-        <script type="text/javascript" src="assets/brat/client/lib/head.load.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="assets/stylesheets/jquery.dataTables.min.css"/>
+        <!-- <link rel="stylesheet" type="text/css" href="assets/brat/static/style-vis.css"/> -->
+        <!-- <script type="text/javascript" src="assets/brat/client/lib/head.load.min.js"></script> -->
         <script type="text/javascript" src="assets/javascripts/jquery-3.2.1.min.js"></script>
+        <script type="text/javascript" src="assets/javascripts/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="assets/javascripts/main.js"></script>
     </head>
 
     <body>
-        <h1> Odin Visualizer </h1>
+        <h1>Taxero</h1>
 
         <div id="overlay">
             <div id="loading">
@@ -19,18 +21,17 @@
         </div>
 
         <form>
-            <textarea name="text" rows="5" cols="120"></textarea>
-            <br />
+            <input type="text" id="query">
+            <select id="queryType">
+                <option value="hyponyms">Hyponyms</option>
+                <option value="hypernyms">Hypernyms</option>
+                <option value="cohyponyms">Cohyponyms</option>
+                <option value="expandedHypernyms">Expanded Hypernyms</option>
+            </select>
             <input type="submit">
-            <input type="checkbox" name="showEverything" value="showEverything">Show Everything<br>
         </form>
 
-        <div id="eidosMentions"></div>
+        <table id="results" class="display" width="100%"></table>
 
-        <div id="groundedAdj" class="add-info"></div>
-
-        <div id="syntax"></div>
-
-        <table id="parse"></table>
     </body>
 </html>

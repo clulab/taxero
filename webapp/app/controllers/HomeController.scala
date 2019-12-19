@@ -29,29 +29,29 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     Ok(views.html.index())
   }
 
-  def getHypernyms(text: String) = Action {
-    val tokens = text.split(" ")
+  def getHypernyms(query: String) = Action {
+    val tokens = query.split(" ")
     val hypernyms = taxero.getRankedHypernyms(tokens)
     val json = JsonUtils.mkJson(hypernyms)
     Ok(json)
   }
 
-  def getHyponyms(text: String) = Action {
-    val tokens = text.split(" ")
+  def getHyponyms(query: String) = Action {
+    val tokens = query.split(" ")
     val hyponyms = taxero.getRankedHyponyms(tokens)
     val json = JsonUtils.mkJson(hyponyms)
     Ok(json)
   }
 
-  def getCohyponyms(text: String) = Action {
-    val tokens = text.split(" ")
+  def getCohyponyms(query: String) = Action {
+    val tokens = query.split(" ")
     val cohyponyms = taxero.getRankedCohyponyms(tokens)
     val json = JsonUtils.mkJson(cohyponyms)
     Ok(json)
   }
 
-  def getExpandedHypernyms(text: String, n: Int) = Action {
-    val tokens = text.split(" ")
+  def getExpandedHypernyms(query: String, n: Int) = Action {
+    val tokens = query.split(" ")
     val hypernyms = taxero.getExpandedHypernyms(tokens, n)
     val json = JsonUtils.mkJson(hypernyms)
     Ok(json)

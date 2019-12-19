@@ -13,11 +13,11 @@ object JsonUtils {
   }
 
   def mkJson(m: ScoredMatch): Json.JsValueWrapper = {
-    Json.obj(
-      "query"  -> m.query,
-      "result" -> m.result,
-      "count"  -> m.count,
-      "score"  -> m.score,
+    Json.arr(
+      m.query.mkString(" "),
+      m.result.mkString(" "),
+      m.count,
+      m.score,
     )
   }
 
