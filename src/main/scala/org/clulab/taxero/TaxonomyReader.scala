@@ -102,11 +102,11 @@ class TaxonomyReader(
   def rankMatches(query: Seq[String], matches: Seq[Match]): Seq[ScoredMatch] = {
     matches
       .map(m => scoreMatch(query, m))
-      .sortBy(-_.score)
+      .sortBy(-_.count)
   }
 
   def scoreMatch(query: Seq[String], m: Match): ScoredMatch = {
-    ScoredMatch(query, m.result, m.count, similarityScore(query, m.result, m.count))
+    ScoredMatch(query, m.result, m.count, similarityScore(query, m.result))
   }
 
   def mkEmbedding(tokens: Seq[String]): Array[Double] = {
