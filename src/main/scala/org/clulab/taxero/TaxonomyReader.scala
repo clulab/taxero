@@ -27,15 +27,13 @@ object TaxonomyReader {
     val config = ConfigFactory.load()
     val extractorEngine = ExtractorEngine.fromConfig
     val wordEmbeddings = new Word2Vec(config[String]("taxero.wordEmbeddings"))
-    val contextEmbeddings = new Word2Vec(config[String]("taxero.contextEmbeddings"))
-    new TaxonomyReader(extractorEngine, wordEmbeddings, contextEmbeddings)
+    new TaxonomyReader(extractorEngine, wordEmbeddings)
   }
 }
 
 class TaxonomyReader(
   val extractorEngine: ExtractorEngine,
   val wordEmbeddings: Word2Vec,
-  val contextEmbeddings: Word2Vec,
 ) {
 
   def getHypernyms(tokens: Seq[String]): Seq[Match] = {
