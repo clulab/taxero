@@ -37,7 +37,7 @@ class TaxonomyReader(
 ) {
 
   def getHypernyms(tokens: Seq[String]): Seq[Match] = {
-    getMatches(mkHypernymQueries(tokens))
+    getMatches(tokens, mkHypernymQueries)
   }
 
   def getRankedHypernyms(tokens: Seq[String]): Seq[ScoredMatch] = {
@@ -45,7 +45,7 @@ class TaxonomyReader(
   }
 
   def getHyponyms(tokens: Seq[String]): Seq[Match] = {
-    getMatches(mkHyponymQueries(tokens))
+    getMatches(tokens, mkHyponymQueries)
   }
 
   def getRankedHyponyms(tokens: Seq[String]): Seq[ScoredMatch] = {
@@ -53,7 +53,7 @@ class TaxonomyReader(
   }
 
   def getCohyponyms(tokens: Seq[String]): Seq[Match] = {
-    getMatches(mkCohyponymQueries(tokens))
+    getMatches(tokens, mkCohyponymQueries)
   }
 
   def getRankedCohyponyms(tokens: Seq[String]): Seq[ScoredMatch] = {
@@ -80,6 +80,13 @@ class TaxonomyReader(
     hypernymCounts.add(getHead(pattern))
     // return scored hypernyms
     rankMatches(pattern, hypernymCounts.getMatches)
+  }
+
+  def getMatches(tokens: Seq[String], mkQueries: Seq[String] => Seq[OdinsonQuery]): Seq[Match] = {
+    for {
+      m <- getMatches(mkQueries(tokens))
+      if m.result != tokens
+    } yield m
   }
 
   def getMatches(queries: Seq[OdinsonQuery]): Seq[Match] = {
