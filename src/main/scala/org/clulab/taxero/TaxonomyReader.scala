@@ -9,6 +9,10 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.common.TryWithResources.using
 import org.clulab.embeddings.word2vec.Word2Vec
+import org.clulab.processors.fastnlp.FastNLPProcessor
+
+import scala.collection.mutable.ArrayBuffer
+
 
 case class Match(
   result: Seq[String],
@@ -35,6 +39,8 @@ class TaxonomyReader(
   val extractorEngine: ExtractorEngine,
   val wordEmbeddings: Word2Vec,
 ) {
+
+  lazy val proc = new FastNLPProcessor
 
   def getHypernyms(tokens: Seq[String]): Seq[Match] = {
     getMatches(tokens, mkHypernymQueries)
@@ -94,13 +100,19 @@ class TaxonomyReader(
     val matches = for {
       query <- queries
       results = extractorEngine.query(query)
+      // for each document
       scoreDoc <- results.scoreDocs
+      // for each matched mention in the document
       odinsonMatch <- scoreDoc.matches
+      // get the tokens from the mention
       result = extractorEngine.getTokens(scoreDoc.doc, odinsonMatch)
     } yield result.toSeq
+    // normalize the results
+    val matchLemmas = matches.map(m => convertToLemmas(m))
+
     // count matches and return them
     val counter = new Counter
-    matches.foreach(counter.add)
+    matchLemmas.foreach(counter.add)
     counter.getMatches
   }
 
@@ -138,6 +150,14 @@ class TaxonomyReader(
     tokens.map(t => "\"" + t.escapeJava + "\"").mkString(" ")
   }
 
+  def mkLemmaPattern(tokens: Seq[String]): String = {
+    // lemmatize
+    val lemmas = convertToLemmas(tokens)
+    lemmas.map(t => "[lemma=\"" + t.escapeJava + "\"]").mkString(" ")
+    // for "other" "dogs" ---> ["other", "dog']
+    // [lemma=other] [lemma=dog]
+  }
+
   def mkHypernymQueries(tokens: Seq[String]): Seq[OdinsonQuery] = {
     mkQueries(tokens, "hypernym-rules.txt")
   }
@@ -153,7 +173,7 @@ class TaxonomyReader(
   def mkQueries(tokens: Seq[String], rulefile: String): Seq[OdinsonQuery] = {
     using (Source.fromResource(rulefile)) { rules =>
       val variables = Map(
-        "query" -> mkPattern(tokens),
+        "query" -> mkLemmaPattern(tokens),
         "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
       )
       rules.mkString
@@ -162,6 +182,16 @@ class TaxonomyReader(
 	.filter(line => !line.startsWith("#"))
         .map(extractorEngine.compiler.compile)
     }
+  }
+
+  // --------------------------------------------
+
+  def convertToLemmas(words: Seq[String]): Seq[String] = {
+    val s = words.mkString(" ")
+    val doc = proc.annotate(s)
+    val sentence = doc.sentences.head
+    // return the lemmas
+    sentence.lemmas.get
   }
 
 }
