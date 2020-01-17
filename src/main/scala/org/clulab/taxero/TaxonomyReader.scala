@@ -159,7 +159,8 @@ class TaxonomyReader(
       rules.mkString
         .replaceVariables(variables)
         .split("""\s*\n\s*\n\s*""")
-        .map(extractorEngine.compiler.compile)
+        .filter(line => !line.startsWith("#"))
+	.map(extractorEngine.compiler.compile)
     }
   }
 
