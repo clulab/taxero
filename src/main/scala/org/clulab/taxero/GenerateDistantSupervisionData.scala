@@ -1,6 +1,7 @@
 package org.clulab.taxero
 
 import java.io.File
+import java.io.{Files, Paths}
 import java.util.concurrent.Executors
 import scala.io.Source
 import scala.concurrent._
@@ -49,17 +50,19 @@ object GenerateDistantSupervisionData extends App with LazyLogging {
       Future {
         val Array(hypo, hyperCandidate, isHyper) = line.split("\t")
         val outfile = new File(outdir, s"$hypo/$hyperCandidate.tsv")
-        logger.debug(s"searching for ${hypo.display} and ${hyperCandidate.display}")
-        val query = mkQuery(hypo, hyperCandidate)
-        val results = extractorEngine.query(query)
-        logger.debug(s"${results.totalHits.display} sentences found for ${hypo.display} and ${hyperCandidate.display}")
-        for (scoreDoc <- results.scoreDocs) {
-          val doc = extractorEngine.doc(scoreDoc.doc)
-          val docId = doc.get(documentIdField)
-          val sentId = doc.get(sentenceIdField)
-          outfile.writeString(s"$docId\t$sentId\n", append = true)
+        if (!Files.exists(Paths.get(outfile))){
+            logger.debug(s"searching for ${hypo.display} and ${hyperCandidate.display}")
+            val query = mkQuery(hypo, hyperCandidate)
+            val results = extractorEngine.query(query)
+            logger.debug(s"${results.totalHits.display} sentences found for ${hypo.display} and ${hyperCandidate.display}")
+            for (scoreDoc <- results.scoreDocs) {
+              val doc = extractorEngine.doc(scoreDoc.doc)
+              val docId = doc.get(documentIdField)
+              val sentId = doc.get(sentenceIdField)
+              outfile.writeString(s"$docId\t$sentId\n", append = true)
+            }
         }
-        ()
+        () // deliverance of the (empty) future hopes and dreams
       }
     }
     logger.debug("waiting for all futures")
