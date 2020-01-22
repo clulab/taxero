@@ -49,18 +49,23 @@ object GenerateDistantSupervisionData extends App with LazyLogging {
     val futures = Future.traverse(src.getLines) { line =>
       Future {
         val Array(hypo, hyperCandidate, isHyper) = line.split("\t")
+        val hypoDir = new File(outdir, hypo)
         val outfile = new File(outdir, s"$hypo/$hyperCandidate.tsv")
         if (!Files.exists(outfile.toPath)){
             logger.debug(s"searching for ${hypo.display} and ${hyperCandidate.display}")
             val query = mkQuery(hypo, hyperCandidate)
             val results = extractorEngine.query(query)
             logger.debug(s"${results.totalHits.display} sentences found for ${hypo.display} and ${hyperCandidate.display}")
-            for (scoreDoc <- results.scoreDocs) {
-              val doc = extractorEngine.doc(scoreDoc.doc)
-              val docId = doc.get(documentIdField)
-              val sentId = doc.get(sentenceIdField)
-              outfile.writeString(s"$docId\t$sentId\n", append = true)
-            }
+            if (results.count == 0) {
+                outfile.touch
+            } else {
+                for (scoreDoc <- results.scoreDocs) {
+                  val doc = extractorEngine.doc(scoreDoc.doc)
+                  val docId = doc.get(documentIdField)
+                  val sentId = doc.get(sentenceIdField)
+                  outfile.writeString(s"$docId\t$sentId\n", append = true)
+                }
+              }
         }
         () // deliverance of the (empty) future hopes and dreams
       }
