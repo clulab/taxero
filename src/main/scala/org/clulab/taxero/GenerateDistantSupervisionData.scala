@@ -1,7 +1,7 @@
 package org.clulab.taxero
 
 import java.io.File
-import java.nio.{Files, Paths}
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.Executors
 import scala.io.Source
 import scala.concurrent._
