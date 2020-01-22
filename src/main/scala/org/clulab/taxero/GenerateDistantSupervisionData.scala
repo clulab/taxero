@@ -49,7 +49,6 @@ object GenerateDistantSupervisionData extends App with LazyLogging {
     val futures = Future.traverse(src.getLines) { line =>
       Future {
         val Array(hypo, hyperCandidate, isHyper) = line.split("\t")
-        val hypoDir = new File(outdir, hypo)
         val outfile = new File(outdir, s"$hypo/$hyperCandidate.tsv")
         if (!Files.exists(outfile.toPath)){
             logger.debug(s"searching for ${hypo.display} and ${hyperCandidate.display}")
