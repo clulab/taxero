@@ -62,6 +62,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
   }
 
   def getCustomRuleResults(query: String, rule: String) = Action {
+    println(s"Query: $query\tRULE: $rule")
     val tokens = query.split(" ")
     val results = taxero.executeGivenRule(tokens, rule)
     val json = JsonUtils.mkJson(results)
