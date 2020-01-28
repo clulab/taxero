@@ -7,7 +7,7 @@
         <!-- <script type="text/javascript" src="assets/brat/client/lib/head.load.min.js"></script> -->
         <script type="text/javascript" src="assets/javascripts/jquery-3.2.1.min.js"></script>
         <script type="text/javascript" src="assets/javascripts/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" src="assets/javascripts/main.js"></script>
+        <script type="text/javascript" src="assets/javascripts/index.js"></script>
     </head>
 
     <body>
@@ -21,14 +21,12 @@
         </div>
 
         <form>
-            Query: <input type="text" id="query">
-            (Optional) Rule: <input type="text" id="rule">
+            <input type="text" id="query">
             <select id="queryType">
                 <option value="hyponyms">Hyponyms</option>
                 <option value="hypernyms">Hypernyms</option>
                 <option value="cohyponyms">Cohyponyms</option>
                 <option value="expandedHypernyms">Expanded Hypernyms</option>
-                <option value="customRule">Custom Rule</option>
             </select>
             <input type="submit">
         </form>
