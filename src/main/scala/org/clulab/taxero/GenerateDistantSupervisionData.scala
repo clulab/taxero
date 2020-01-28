@@ -55,7 +55,7 @@ object GenerateDistantSupervisionData extends App with LazyLogging {
             val query = mkQuery(hypo, hyperCandidate)
             val results = extractorEngine.query(query)
             logger.debug(s"${results.totalHits.display} sentences found for ${hypo.display} and ${hyperCandidate.display}")
-            if (results.count == 0) {
+            if (results.totalHits == 0) {
                 outfile.touch
             } else {
                 for (scoreDoc <- results.scoreDocs) {
