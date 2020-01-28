@@ -6,8 +6,10 @@ $(document).ready(function () {
         event.preventDefault();
 
         // collect form data
+        var query = $('#query').val();
         var rule = $('#rule').val();
         var formData = {
+            'query': query
             'rule': rule
         }
 

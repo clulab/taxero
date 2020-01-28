@@ -83,7 +83,7 @@ class TaxonomyReader(
   }
 
   def executeGivenRule(tokens: Seq[String], rule: String): Seq[ScoredMatch] = {
-    val query = mkGivenQuery(rule)
+    val query = mkGivenQuery(tokens, rule)
     rankMatches(tokens, getMatches(Seq(query)))
   }
 
@@ -155,8 +155,9 @@ class TaxonomyReader(
     mkQueries(tokens, "cohyponym-rules.txt")
   }
 
-  def mkGivenQuery(rule: String): OdinsonQuery = {
+  def mkGivenQuery(tokens: Seq[String], rule: String): OdinsonQuery = {
     val variables = Map(
+      "query" -> mkPattern(tokens),
       "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
     )
     val formatted = rule.replaceVariables(variables)
