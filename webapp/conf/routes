@@ -5,7 +5,7 @@
 
 # An example controller showing a sample home page
 GET     /                           controllers.HomeController.index
-GET     /                           controllers.HomeController.dev
+GET     /dev                        controllers.HomeController.dev
 GET     /hypernyms                  controllers.HomeController.getHypernyms(query: String)
 GET     /hyponyms                   controllers.HomeController.getHyponyms(query: String)
 GET     /cohyponyms                 controllers.HomeController.getCohyponyms(query: String)
