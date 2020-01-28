@@ -9,7 +9,7 @@ $(document).ready(function () {
         var query = $('#query').val();
         var rule = $('#rule').val();
         var formData = {
-            'query': query
+            'query': query,
             'rule': rule
         }
 
