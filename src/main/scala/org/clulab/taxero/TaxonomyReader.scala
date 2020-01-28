@@ -82,6 +82,11 @@ class TaxonomyReader(
     rankMatches(pattern, hypernymCounts.getMatches)
   }
 
+  def executeGivenRule(tokens: Seq[String], rule: String): Seq[ScoredMatch] = {
+    val query = mkGivenQuery(tokens, rule)
+    rankMatches(tokens, getMatches(Seq(query)))
+  }
+
   def getMatches(tokens: Seq[String], mkQueries: Seq[String] => Seq[OdinsonQuery]): Seq[Match] = {
     for {
       m <- getMatches(mkQueries(tokens))
@@ -150,6 +155,15 @@ class TaxonomyReader(
     mkQueries(tokens, "cohyponym-rules.txt")
   }
 
+  def mkGivenQuery(tokens: Seq[String], rule: String): OdinsonQuery = {
+    val variables = Map(
+      "query" -> mkPattern(tokens),
+      "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
+    )
+    val formatted = rule.replaceVariables(variables)
+    extractorEngine.compiler.compile(formatted)
+  }
+
   def mkQueries(tokens: Seq[String], rulefile: String): Seq[OdinsonQuery] = {
     using (Source.fromResource(rulefile)) { rules =>
       val variables = Map(
@@ -160,7 +174,7 @@ class TaxonomyReader(
         .replaceVariables(variables)
         .split("""\s*\n\s*\n\s*""")
         .filter(line => !line.startsWith("#"))
-	.map(extractorEngine.compiler.compile)
+        .map(extractorEngine.compiler.compile)
     }
   }
 
