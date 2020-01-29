@@ -105,7 +105,8 @@ class TaxonomyReader(
       results = extractorEngine.query(query)
       scoreDoc <- results.scoreDocs
       odinsonMatch <- scoreDoc.matches
-      result = extractorEngine.getTokens(scoreDoc.doc, odinsonMatch)
+      mention = if (odinsonMatch.namedCaptures.nonEmpty) odinsonMatch.namedCaptures.head.capturedMatch else odinsonMatch
+      result = extractorEngine.getTokens(scoreDoc.doc, mention)
     } yield result.toSeq
     // count matches and return them
     val counter = new Counter
