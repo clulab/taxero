@@ -1,0 +1,33 @@
+<html>
+<head>
+    <title>Taxero Dev Tool</title>
+    <link rel="stylesheet" type="text/css" href="assets/stylesheets/main.css"/>
+    <link rel="stylesheet" type="text/css" href="assets/stylesheets/jquery.dataTables.min.css"/>
+    <!-- <link rel="stylesheet" type="text/css" href="assets/brat/static/style-vis.css"/> -->
+    <!-- <script type="text/javascript" src="assets/brat/client/lib/head.load.min.js"></script> -->
+    <script type="text/javascript" src="assets/javascripts/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="assets/javascripts/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="assets/javascripts/dev.js"></script>
+</head>
+
+<body>
+<h1>Taxero</h1>
+
+<div id="overlay">
+    <div id="loading">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="assets/images/loading.svg"><br />
+        Reading text...
+    </div>
+</div>
+
+<form>
+    Query:<input type="text" id="query">
+    <br>
+    Rule: <input type="text" id="rule" size="100">
+    <input type="submit">
+</form>
+
+<table id="results" class="display" width="100%"></table>
+
+</body>
+</html>

@@ -29,6 +29,10 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     Ok(views.html.index())
   }
 
+  def dev() = Action { implicit request: Request[AnyContent] =>
+    Ok(views.html.dev())
+  }
+
   def getHypernyms(query: String) = Action {
     val tokens = query.split(" ")
     val hypernyms = taxero.getRankedHypernyms(tokens)
@@ -54,6 +58,14 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     val tokens = query.split(" ")
     val hypernyms = taxero.getExpandedHypernyms(tokens, n)
     val json = JsonUtils.mkJson(hypernyms)
+    Ok(json)
+  }
+
+  def getCustomRuleResults(query: String, rule: String) = Action {
+    println(s"[DEV] Query: <<$query>>\tRULE: <<$rule>>")
+    val tokens = query.split(" ")
+    val results = taxero.executeGivenRule(tokens, rule)
+    val json = JsonUtils.mkJson(results)
     Ok(json)
   }
 
