@@ -172,7 +172,7 @@ class TaxonomyReader(
 
   def mkGivenQuery(tokens: Seq[String], rule: String): OdinsonQuery = {
     val variables = Map(
-      "query" -> mkPattern(tokens),
+      "query" -> mkLemmaPattern(tokens),
       "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
     )
     val formatted = rule.replaceVariables(variables)
