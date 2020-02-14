@@ -9,10 +9,10 @@ import ai.lum.common.FileUtils._
 
 
 object GenerateEvalFile extends App {
-  println("it works up to here")
+  println("Beginning to generate Eval File")
   val config = ConfigFactory.load()
   val reader = TaxonomyReader.fromConfig
-  println("it doesn't work")
+  println("TaxonomyReader loaded...")
 //  val filename = "eval_hypo_query_entities_unique.txt"
   val filename: String = config[String]("eval.entities")
 
@@ -23,7 +23,7 @@ object GenerateEvalFile extends App {
     val matches = reader.getHypernyms(tokens)
     for (m <- matches) {
       val result = m.result.mkString(" ")
-      outfile.writeString(s"$query\t$result\t${m.count}", append = true)
+      outfile.writeString(s"$query\t$result\t${m.count}\n", append = true)
     }
   }
 
