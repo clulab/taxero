@@ -19,7 +19,9 @@ object GenerateSampleEval extends App {
   val file = new File("evalfilenamepath")
   println("reading the directory")
   println(file)
-  val files = file.listFiles()
+  // val files = file.listFiles()
+  //to exclude directories 
+  val files = file.listFiles().filter(_.isFile)
   println("looped through directory")
   for (i <- files) {
    println(i)
