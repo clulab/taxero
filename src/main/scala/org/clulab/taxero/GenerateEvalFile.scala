@@ -13,7 +13,7 @@ object GenerateEvalFile extends App {
   val config = ConfigFactory.load()
   val reader = TaxonomyReader.fromConfig
   println("TaxonomyReader loaded...")
-//  val filename = "eval_hypo_query_entities_unique.txt"
+
   val filename: String = config[String]("eval.entities")
 
   val outfile = config[File]("eval.output")
