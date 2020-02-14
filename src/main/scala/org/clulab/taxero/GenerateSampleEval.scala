@@ -34,8 +34,8 @@ object GenerateSampleEval extends App {
 
     val numlines: Int = Source.fromFile(f).getLines.size
     println("number of lines: " + numlines)
-    evalnumfile.writeString(s"$f\t$numlines\n", append = true)
-    evalsamplefile.writeString(s"$f\n", append = true)
+    evalnumfile.writeString(s"${f.getName}\t$numlines\n", append = true)
+    evalsamplefile.writeString(s"${f.getName}\n", append = true)
 
     for (line <- Source.fromFile(f).getLines()) {
       val tokens = line.trim.split("\t")
