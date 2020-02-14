@@ -27,7 +27,8 @@ object GenerateSampleEval extends App {
    println(i)
   }
   // println(files)
-
+  evalsamplefile.writeString(s"Query\tHypernym\tCount\n", append = true)
+  evalnumfile.writeString(s"Rule Name\tNumber of Results\n", append = true)
   for (f <- files) {
     val oneCountlist = new ArrayBuffer[String]()
     val moreThanOneCountlist = new ArrayBuffer[String]()
