@@ -16,19 +16,15 @@ object GenerateSampleEval extends App {
   val evalfilenamepath: String = config[String]("eval.files.path")
   val evalsamplefile = config[File]("sample.eval.output")
   val evalnumfile = config[File]("number.of.results.output")
-  val file = new File("evalfilenamepath")
-  println("reading the directory")
-  println(file)
-  // val files = file.listFiles()
-  //to exclude directories 
+  val file = new File(evalfilenamepath)
+  println("reading the directory"))
+  // exclude directories 
   val files = file.listFiles().filter(_.isFile)
   println("looped through directory")
-  for (i <- files) {
-   println(i)
-  }
-  // println(files)
-  evalsamplefile.writeString(s"Query\tHypernym\tCount\n", append = true)
-  evalnumfile.writeString(s"Rule Name\tNumber of Results\n", append = true)
+  
+  evalsamplefile.writeString(s"Rule\tQuery\tHypernym\tCount\n", append = true)
+  evalnumfile.writeString(s"Rule\tNumber of Results\n", append = true)
+
   for (f <- files) {
     val oneCountlist = new ArrayBuffer[String]()
     val moreThanOneCountlist = new ArrayBuffer[String]()
@@ -36,7 +32,7 @@ object GenerateSampleEval extends App {
     val numlines: Int = Source.fromFile(f).getLines.size
     println("number of lines: " + numlines)
     evalnumfile.writeString(s"${f.getName}\t$numlines\n", append = true)
-    evalsamplefile.writeString(s"${f.getName}\n", append = true)
+    val ruleName = f.getName
 
     for (line <- Source.fromFile(f).getLines()) {
       val tokens = line.trim.split("\t")
@@ -46,12 +42,7 @@ object GenerateSampleEval extends App {
         moreThanOneCountlist += line
       }
     }
-      // assume len(oneCountlist) and len(moreThanOneCountlist) each are > 250 ??
     if (numlines > 500) {
-//       val r = new util.Random
-//       val randomlist_1 = continually(r.nextInt(oneCountlist.size)).take(250).toList
-//       val randomlist_2 = continually(r.nextInt(moreThanOneCountlist.size)).take(250).toList
-
       val r = scala.util.Random
       var temp_1:Int = 0
       var temp_2:Int = 0
@@ -80,15 +71,15 @@ object GenerateSampleEval extends App {
 
 
       for (num <- randomlist_1) {
-        evalsamplefile.writeString(s"${oneCountlist(num)}\n", append = true)
+        evalsamplefile.writeString(s"$ruleName\t${oneCountlist(num)}\n", append = true)
       }
       for (num <- randomlist_2) {
-        evalsamplefile.writeString(s"${moreThanOneCountlist(num)}\n", append = true)
+        evalsamplefile.writeString(s"$ruleName\t${moreThanOneCountlist(num)}\n", append = true)
       }
 
     } else {
       for (line <- Source.fromFile(f).getLines) {
-        evalsamplefile.writeString(s"$line\n", append = true)
+        evalsamplefile.writeString(s"$ruleName\t$line\n", append = true)
       }
     }
 
