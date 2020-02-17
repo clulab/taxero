@@ -63,7 +63,7 @@ class TaxonomyReader(
     // add the n closest cohyponyms to the query set
     allQueries ++= getRankedCohyponyms(pattern).take(n).map(_.result)
     // start an empty map for the hypernym candidate counts
-    val hypernymCounts = new Counter
+    val hypernymCounts = new Consolidator
     // count hypernym candidates
     for {
       q <- allQueries
@@ -99,13 +99,20 @@ class TaxonomyReader(
       results = extractorEngine.query(query)
       scoreDoc <- results.scoreDocs
       odinsonMatch <- scoreDoc.matches
-      mention = if (odinsonMatch.namedCaptures.nonEmpty) odinsonMatch.namedCaptures.head.capturedMatch else odinsonMatch
-      result = extractorEngine.getTokens(scoreDoc.doc, mention)
-    } yield result.toSeq
+      // if there is a named capture then use it as the result,
+      // else use the whole match
+      mention = odinsonMatch.arguments.getOrElse("result", Array(odinsonMatch)).head
+      tokens = extractorEngine.getTokens(scoreDoc.doc, mention)
+    } yield tokens.toSeq
+    // count matches so that we can add them to the consolidator efficiently
+    val groupedMatches = matches.groupBy(identity).mapValues(_.length)
     // count matches and return them
-    val counter = new Counter
-    matches.foreach(counter.add)
-    counter.getMatches
+    val consolidator = new Consolidator(proc)
+    for ((tokens, count) <- groupedMatches.toSeq) {
+      consolidator.add(tokens, count)
+    }
+    // return results
+    consolidator.getMatches
   }
 
   def rankMatches(query: Seq[String], matches: Seq[Match]): Seq[ScoredMatch] = {
@@ -123,6 +130,8 @@ class TaxonomyReader(
   }
 
   def getHead(tokens: Seq[String]): Seq[String] = {
+    // FIXME this function is supposed to return the syntactic head of the provided tokens,
+    // but it currently just returns the last token
     Seq(tokens.last)
   }
 
