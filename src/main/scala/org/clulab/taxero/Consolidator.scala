@@ -4,6 +4,9 @@ import scala.collection.mutable.HashMap
 import org.clulab.processors.Processor
 import org.clulab.processors.fastnlp.FastNLPProcessor
 
+/** This class represents a Consolidator object that groups
+ *  the results of a query by lemmas.
+ */
 class Consolidator(
   val processor: Processor,
   private val counts: HashMap[Seq[String], Int],
@@ -14,6 +17,8 @@ class Consolidator(
 
   def this() = this(new FastNLPProcessor)
 
+  def keys = display.values
+
   def add(tokens: Seq[String]): Unit = add(tokens, 1)
 
   def add(tokens: Seq[String], count: Int): Unit = {
@@ -22,6 +27,7 @@ class Consolidator(
     display.getOrElseUpdate(lemmas, tokens)
   }
 
+  /** Returns the results of the consolidation process */
   def getMatches: Seq[Match] = {
     counts
       .toIterator
