@@ -21,9 +21,20 @@
 </div>
 
 <form>
-    Query:<input type="text" id="query">
+    <label for="query">Query:</label>
+    <input type="text" id="query">
     <br>
-    Rule: <input type="text" id="rule" size="100">
+    <label for="rules">Rules:</label>
+<textarea id="rules" rows="10" cols="100">
+vars:
+  result: "(?<result> [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
+
+rules:
+  - name: example-rule
+    type: basic   # or event
+    pattern: |
+      ${query} >nmod_such_as ${result}
+</textarea>
     <input type="submit">
 </form>
 
