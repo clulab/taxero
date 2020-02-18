@@ -1,0 +1,21 @@
+vars:
+  result: "(?<result> [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
+  skipwords: "(?<! [lemma=/feature|property|aspect|component|characteristic/] []{,2}) /(most|less|more||few|much|many|lots?|little|some|same|several|numerous|amounts?|major|minor|majority|number|multiple|range|variet(y|ies)|others?|additional|next|basic|whole|of|such|all|essential|necessary|specific|special|particular|certain|importan(t|ce)|significant|main|extreme|different|various|unusual|usual|common|general|familiar|small(er|est)?|big(ger|gest)?|large(r|st)?|old(er|est)?|young(er|est)?|new(er|est)?|own|event|types?|kinds?|examples?|sorts?|class(es)?|parts?|pieces?|members?|aspects?|components?|sets?|an?|the|wide)/{,5}"
+
+rules:
+  - name: hypo-1
+    type: basic
+    pattern: |
+      (?<! [lemma=/feature|property|aspect|component|characteristic/] []{,2})
+      ${query}
+      >nmod_such_as >/conj_.+/?
+      ${skipwords}
+      ${result}
+
+  - name: hypo-2
+    type: basic
+    pattern: |
+      ${query}
+      >nmod_including >/conj_.+/?
+      ${skipwords}
+      ${result}
