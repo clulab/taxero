@@ -39,28 +39,22 @@ class TaxonomyReader(
 
   lazy val proc = new FastNLPProcessor
 
-  def getHypernyms(tokens: Seq[String]): Seq[Match] = {
-    getMatches(tokens, mkHypernymQueries)
-  }
-
   def getRankedHypernyms(tokens: Seq[String]): Seq[ScoredMatch] = {
-    rankMatches(tokens, getHypernyms(tokens))
-  }
-
-  def getHyponyms(tokens: Seq[String]): Seq[Match] = {
-    getMatches(tokens, mkHyponymQueries)
+    val lemmas = convertToLemmas(tokens)
+    val matches = getMatches(lemmas, mkHypernymQueries)
+    rankMatches(lemmas, matches)
   }
 
   def getRankedHyponyms(tokens: Seq[String]): Seq[ScoredMatch] = {
-    rankMatches(tokens, getHyponyms(tokens))
-  }
-
-  def getCohyponyms(tokens: Seq[String]): Seq[Match] = {
-    getMatches(tokens, mkCohyponymQueries)
+    val lemmas = convertToLemmas(tokens)
+    val matches = getMatches(lemmas, mkHyponymQueries)
+    rankMatches(lemmas, matches)
   }
 
   def getRankedCohyponyms(tokens: Seq[String]): Seq[ScoredMatch] = {
-    rankMatches(tokens, getCohyponyms(tokens))
+    val lemmas = convertToLemmas(tokens)
+    val matches = getMatches(lemmas, mkCohyponymQueries)
+    rankMatches(lemmas, matches) 
   }
 
   def getExpandedHypernyms(pattern: Seq[String], n: Int): Seq[ScoredMatch] = {
@@ -73,7 +67,7 @@ class TaxonomyReader(
     // count hypernym candidates
     for {
       q <- allQueries
-      m <- getHypernyms(q)
+      m <- getRankedHypernyms(q)                 // getHypernyms changed to getRankedHypernyms   
     } hypernymCounts.add(m.result, m.count)
     // add the heads of each hypernym to the results
     for (candidate <- hypernymCounts.keys) {
@@ -157,10 +151,9 @@ class TaxonomyReader(
     tokens.map(t => "\"" + t.escapeJava + "\"").mkString(" ")
   }
 
-  def mkLemmaPattern(tokens: Seq[String]): String = {
-    // lemmatize
-    val lemmas = convertToLemmas(tokens)
-    println("TOKENS: " + tokens.mkString(" "))
+  // tokens changed to lemmas as the first argument  
+  def mkLemmaPattern(lemmas: Seq[String]): String = {            
+    //println("TOKENS: " + tokens.mkString(" "))
     println("LEMMAS: " + lemmas.mkString(" "))
     lemmas.map(t => "[lemma=\"" + t.escapeJava + "\"]").mkString(" ")
     // for "other" "dogs" ---> ["other", "dog']
@@ -207,7 +200,10 @@ class TaxonomyReader(
 
   def convertToLemmas(words: Seq[String]): Seq[String] = {
     val s = words.mkString(" ")
-    val doc = proc.annotate(s)
+    val doc = proc.mkDocument(s)
+    proc.tagPartsOfSpeech(doc) 
+    proc.lemmatize(doc)
+    doc.clear()
     val sentence = doc.sentences.head
     // return the lemmas
     sentence.lemmas.get
