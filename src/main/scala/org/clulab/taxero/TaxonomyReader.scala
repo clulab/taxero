@@ -115,6 +115,23 @@ class TaxonomyReader(
     consolidator.getMatches
   }
 
+  def getMatches(extractors: Seq[Extractor]): Seq[Match] = {
+    val matches = for {
+      mention <- extractorEngine.extractMentions(extractors)
+      result = mention.odinsonMatch.arguments.getOrElse("result", Array(mention.odinsonMatch)).head
+      tokens = extractorEngine.getTokens(mention)
+    } yield tokens.toSeq
+    // count matches so that we can add them to the consolidator efficiently
+    val groupedMatches = matches.groupBy(identity).mapValues(_.length)
+    // count matches and return them
+    val consolidator = new Consolidator(proc)
+    for ((tokens, count) <- groupedMatches.toSeq) {
+      consolidator.add(tokens, count)
+    }
+    // return results
+    consolidator.getMatches
+  }
+
   def rankMatches(query: Seq[String], matches: Seq[Match]): Seq[ScoredMatch] = {
     matches
       .map(m => scoreMatch(query, m))
@@ -181,18 +198,10 @@ class TaxonomyReader(
     extractorEngine.compiler.compile(formatted)
   }
 
-  def mkQueries(tokens: Seq[String], rulefile: String): Seq[OdinsonQuery] = {
+  def mkExtractors(tokens: Seq[String], rulefile: String): Seq[Extractor] = {
     using (Source.fromResource(rulefile)) { rules =>
-      val variables = Map(
-        "query" -> mkLemmaPattern(tokens),
-        "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
-      )
-      rules.mkString
-        .replaceVariables(variables)
-        .split("""\s*\n\s*\n\s*""")
-        .filter(line => !line.startsWith("#"))
-        .map{ r => println(r); r }
-        .map(extractorEngine.compiler.compile)
+      val variables = Map("query" -> mkLemmaPattern(tokens))
+      extractorEngine.ruleReader.compileRuleFile(rules.mkString, variables)
     }
   }
 
