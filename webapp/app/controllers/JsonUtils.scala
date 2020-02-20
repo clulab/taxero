@@ -17,6 +17,7 @@ object JsonUtils {
       m.query.mkString(" "),
       m.result.mkString(" "),
       m.count,
+      m.similarity,
       m.score,
     )
   }

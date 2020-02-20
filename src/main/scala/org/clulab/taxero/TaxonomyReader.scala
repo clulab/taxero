@@ -2,12 +2,13 @@ package org.clulab.taxero
 
 import scala.io.Source
 import scala.collection.mutable
-import ai.lum.odinson._
-import ai.lum.odinson.lucene.search._
 import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.common.TryWithResources.using
+import ai.lum.odinson._
+import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.utils.QueryUtils
 import org.clulab.embeddings.word2vec.Word2Vec
 import org.clulab.processors.fastnlp.FastNLPProcessor
 
@@ -20,7 +21,8 @@ case class ScoredMatch(
   query: Seq[String],
   result: Seq[String],
   count: Int,
-  score: Double,
+  similarity: Double,
+  score: Double, // this is the score used for ranking, probably made from count and similarity
 )
 
 object TaxonomyReader {
@@ -37,23 +39,26 @@ class TaxonomyReader(
   val wordEmbeddings: Word2Vec,
 ) {
 
-  lazy val proc = new FastNLPProcessor
+  val proc = new FastNLPProcessor
 
   def getRankedHypernyms(tokens: Seq[String]): Seq[ScoredMatch] = {
     val lemmas = convertToLemmas(tokens)
-    val matches = getMatches(lemmas, mkHypernymQueries)
+    val extractors = mkHypernymExtractors(lemmas)
+    val matches = getMatches(extractors)
     rankMatches(lemmas, matches)
   }
 
   def getRankedHyponyms(tokens: Seq[String]): Seq[ScoredMatch] = {
     val lemmas = convertToLemmas(tokens)
-    val matches = getMatches(lemmas, mkHyponymQueries)
+    val extractors = mkHyponymExtractors(lemmas)
+    val matches = getMatches(extractors)
     rankMatches(lemmas, matches)
   }
 
   def getRankedCohyponyms(tokens: Seq[String]): Seq[ScoredMatch] = {
     val lemmas = convertToLemmas(tokens)
-    val matches = getMatches(lemmas, mkCohyponymQueries)
+    val extractors = mkCohyponymExtractors(lemmas)
+    val matches = getMatches(extractors)
     rankMatches(lemmas, matches) 
   }
 
@@ -79,31 +84,15 @@ class TaxonomyReader(
     rankMatches(pattern, hypernymCounts.getMatches)
   }
 
-  def executeGivenRule(tokens: Seq[String], rule: String): Seq[ScoredMatch] = {
-    val query = mkGivenQuery(tokens, rule)
-    rankMatches(tokens, getMatches(Seq(query)))
+  def executeGivenRules(tokens: Seq[String], rules: String): Seq[ScoredMatch] = {
+    val lemmas = convertToLemmas(tokens)
+    val extractors = mkExtractorsFromRules(lemmas, rules)
+    val matches = getMatches(extractors)
+    rankMatches(lemmas, matches)
   }
 
-  def getMatches(tokens: Seq[String], mkQueries: Seq[String] => Seq[OdinsonQuery]): Seq[Match] = {
-    println("querying: " + tokens.mkString(" "))
-    for {
-      m <- getMatches(mkQueries(tokens))
-      if m.result != tokens
-    } yield m
-  }
-
-  def getMatches(queries: Seq[OdinsonQuery]): Seq[Match] = {
-    // get matches
-    val matches = for {
-      query <- queries
-      results = extractorEngine.query(query)
-      scoreDoc <- results.scoreDocs
-      odinsonMatch <- scoreDoc.matches
-      // if there is a named capture then use it as the result,
-      // else use the whole match
-      mention = odinsonMatch.arguments.getOrElse("result", Array(odinsonMatch)).head
-      tokens = extractorEngine.getTokens(scoreDoc.doc, mention)
-    } yield tokens.toSeq
+  def getMatches(extractors: Seq[Extractor]): Seq[Match] = {
+    val matches = for (m <- extractorEngine.extractMentions(extractors)) yield getResultTokens(m)
     // count matches so that we can add them to the consolidator efficiently
     val groupedMatches = matches.groupBy(identity).mapValues(_.length)
     // count matches and return them
@@ -115,14 +104,28 @@ class TaxonomyReader(
     consolidator.getMatches
   }
 
+  def getResultTokens(mention: Mention): Seq[String] = {
+    val args = mention.odinsonMatch.arguments
+    val m = args.get("result") match {
+      // if there is a captured mention called "result" then that's the result
+      case Some(matches) => matches.head
+      // if there is no named result, then use the whole match as the result
+      case None => mention.odinsonMatch
+    }
+    extractorEngine.getTokens(mention.luceneDocId, m)
+  }
+
   def rankMatches(query: Seq[String], matches: Seq[Match]): Seq[ScoredMatch] = {
     matches
       .map(m => scoreMatch(query, m))
-      .sortBy(-_.count)
+      .sortBy(-_.score)
   }
 
   def scoreMatch(query: Seq[String], m: Match): ScoredMatch = {
-    ScoredMatch(query, m.result, m.count, similarityScore(query, m.result))
+    val count = m.count
+    val similarity = similarityScore(query, m.result)
+    val score = count // FIXME we need better ranking
+    ScoredMatch(query, m.result, count, similarity, score)
   }
 
   def mkEmbedding(tokens: Seq[String]): Array[Double] = {
@@ -135,7 +138,7 @@ class TaxonomyReader(
     Seq(tokens.last)
   }
 
-  def similarityScore(query: Seq[String], result: Seq[String], freq: Double = 1): Double = {
+  def similarityScore(query: Seq[String], result: Seq[String]): Double = {
     // 2. get embedding for MWEs
     //    a. embedding of head word
     //    b. average of all word embeddings
@@ -144,56 +147,44 @@ class TaxonomyReader(
     // 3. frequency * cosineSimilarity(emb(query), emb(result))
     val q = mkEmbedding(query)
     val r = mkEmbedding(result)
-    freq * Word2Vec.dotProduct(q, r)
-  }
-
-  def mkPattern(tokens: Seq[String]): String = {
-    tokens.map(t => "\"" + t.escapeJava + "\"").mkString(" ")
+    Word2Vec.dotProduct(q, r)
   }
 
   // tokens changed to lemmas as the first argument  
   def mkLemmaPattern(lemmas: Seq[String]): String = {            
     //println("TOKENS: " + tokens.mkString(" "))
     println("LEMMAS: " + lemmas.mkString(" "))
-    lemmas.map(t => "[lemma=\"" + t.escapeJava + "\"]").mkString(" ")
+    lemmas
+      .map(x => s"[lemma=${QueryUtils.maybeQuoteLabel(x)}]")
+      .mkString(" ")
     // for "other" "dogs" ---> ["other", "dog']
     // [lemma=other] [lemma=dog]
   }
 
-  def mkHypernymQueries(tokens: Seq[String]): Seq[OdinsonQuery] = {
-    mkQueries(tokens, "hypernym-rules.txt")
+  def mkHypernymExtractors(tokens: Seq[String]): Seq[Extractor] = {
+    mkExtractorsFromFile(tokens, "hypernym-rules.yml")
   }
 
-  def mkHyponymQueries(tokens: Seq[String]): Seq[OdinsonQuery] = {
-    mkQueries(tokens, "hyponym-rules.txt")
+  def mkHyponymExtractors(tokens: Seq[String]): Seq[Extractor] = {
+    mkExtractorsFromFile(tokens, "hyponym-rules.yml")
   }
 
-  def mkCohyponymQueries(tokens: Seq[String]): Seq[OdinsonQuery] = {
-    mkQueries(tokens, "cohyponym-rules.txt")
+  def mkCohyponymExtractors(tokens: Seq[String]): Seq[Extractor] = {
+    mkExtractorsFromFile(tokens, "cohyponym-rules.yml")
   }
 
-  def mkGivenQuery(tokens: Seq[String], rule: String): OdinsonQuery = {
-    val variables = Map(
-      "query" -> mkLemmaPattern(tokens),
-      "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
-    )
-    val formatted = rule.replaceVariables(variables)
-    extractorEngine.compiler.compile(formatted)
-  }
-
-  def mkQueries(tokens: Seq[String], rulefile: String): Seq[OdinsonQuery] = {
+  /** gets the contents of a rule file, as well as a tokenized query
+   *  and returns the corresponding odinson extractors
+   */
+  def mkExtractorsFromFile(tokens: Seq[String], rulefile: String): Seq[Extractor] = {
     using (Source.fromResource(rulefile)) { rules =>
-      val variables = Map(
-        "query" -> mkLemmaPattern(tokens),
-        "chunk" -> "( [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)? )",
-      )
-      rules.mkString
-        .replaceVariables(variables)
-        .split("""\s*\n\s*\n\s*""")
-        .filter(line => !line.startsWith("#"))
-        .map{ r => println(r); r }
-        .map(extractorEngine.compiler.compile)
+      mkExtractorsFromRules(tokens, rules.mkString)
     }
+  }
+
+  def mkExtractorsFromRules(tokens: Seq[String], rules: String): Seq[Extractor] = {
+    val variables = Map("query" -> mkLemmaPattern(tokens))
+    extractorEngine.ruleReader.compileRuleFile(rules.mkString, variables)
   }
 
   // --------------------------------------------
