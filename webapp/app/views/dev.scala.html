@@ -25,7 +25,7 @@
     <input type="text" id="query">
     <br>
     <label for="rules">Rules:</label>
-<textarea id="rules" rows="10" cols="100">
+    <textarea id="rules" rows="10" cols="100">
 vars:
   result: "(?<result> [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
 
@@ -34,7 +34,8 @@ rules:
     type: basic   # or event
     pattern: |
       ${query} >nmod_such_as >/conj.*/? ${result}
-</textarea>
+    </textarea>
+    <br>
     <input type="submit">
 </form>
 
