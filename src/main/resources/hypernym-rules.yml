@@ -7,7 +7,7 @@ rules:
     type: basic
     pattern: |
       ${query}                   # start from the specified query
-      </conj_.+/? <nmod_such_as  # traverse this path
+      </conj.+/? <nmod_such_as  # traverse this path
       ${skipmeronymy}
       ${skipquantifier}          # skip these words
       ${result}                  # grab the result
@@ -15,4 +15,4 @@ rules:
   - name: hyper-2
     type: basic
     pattern: |
-      ${query} </conj_.+/? <nmod_including ${result}
+      ${query} </conj.+/? <nmod_including ${result}
