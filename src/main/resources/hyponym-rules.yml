@@ -8,7 +8,7 @@ rules:
     pattern: |
       ${skipmeronymy}
       ${query}
-      >nmod_such_as >/conj_.+/?
+      >nmod_such_as >/conj.*/?
       ${skipquantifier}
       ${result}
 
@@ -16,6 +16,6 @@ rules:
     type: basic
     pattern: |
       ${query}
-      >nmod_including >/conj_.+/?
+      >nmod_including >/conj.*/?
       ${skipquantifier}
       ${result}
