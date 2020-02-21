@@ -1,14 +1,15 @@
 vars:
   result: "(?<result> [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
-  skipwords: "(?<! [lemma=/feature|property|aspect|component|characteristic/] []{,2}) /(most|less|more||few|much|many|lots?|little|some|same|several|numerous|amounts?|major|minor|majority|number|multiple|range|variet(y|ies)|others?|additional|next|basic|whole|of|such|all|essential|necessary|specific|special|particular|certain|importan(t|ce)|significant|main|extreme|different|various|unusual|usual|common|general|familiar|small(er|est)?|big(ger|gest)?|large(r|st)?|old(er|est)?|young(er|est)?|new(er|est)?|own|event|types?|kinds?|examples?|sorts?|class(es)?|parts?|pieces?|members?|aspects?|components?|sets?|an?|the|wide)/{,5}"
-
+  skipquantifier: "/(most|less|more|few|any|much|many|lots?|little|some|same|several|numerous|plenty|amounts?|major|minor|majority|number|multiple|range|variet(y|ies)|others?|additional|next|basic|whole|of|such|all|essential|necessary|specific|special|particular|certain|importan(t|ce)|significant|main|extreme|different|various|unusual|usual|common|general|familiar|small(er|est)?|big(ger|gest)?|large(r|st)?|old(er|est)?|young(er|est)?|new(er|est)?|own|event|types?|kinds?|examples?|sorts?|class(es)?|parts?|pieces?|members?|aspects?|components?|sets?|an?|the|wide)/{,5}"
+  skipmeronymy: "(?<! [lemma=/feature|property|aspect|component|characteristic/] []{,2})"
 rules:
   - name: hyper-1
     type: basic
     pattern: |
       ${query}                   # start from the specified query
       </conj_.+/? <nmod_such_as  # traverse this path
-      ${skipwords}               # skip these words
+      ${skipmeronymy}
+      ${skipquantifier}          # skip these words
       ${result}                  # grab the result
 
   - name: hyper-2
