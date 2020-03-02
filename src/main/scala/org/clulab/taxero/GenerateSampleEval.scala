@@ -17,7 +17,7 @@ object GenerateSampleEval extends App {
   val evalsamplefile = config[File]("sample.eval.output")
   val evalnumfile = config[File]("number.of.results.output")
   val file = new File(evalfilenamepath)
-  println("reading the directory"))
+  println("reading the directory")
   // exclude directories 
   val files = file.listFiles().filter(_.isFile)
   println("looped through directory")

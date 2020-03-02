@@ -12,7 +12,19 @@ rules:
       ${skipquantifier}          # skip these words
       ${result}                  # grab the result
 
-  - name: hyper-2
-    type: basic
-    pattern: |
-      ${query} </conj.*/? <nmod_including ${result}
+#  - name: hyper-2
+#    type: basic
+#    pattern: |
+#      ${query} </conj.*/? <nmod_including ${result}
+
+#   - name: hyper-3
+#     type: basic
+#     pattern: |
+#       ${query} (is|are) /(an?|the)/? ${skipmeronymy} ${skipquantifier} ${result}
+
+#    - name: hyper-4
+#      type: basic
+#      pattern: |
+#        ${query} (is|are) (also|all)? /(an?|the)/? ${skipquantifier} ${result}
+
+

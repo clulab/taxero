@@ -20,10 +20,10 @@ object GenerateEvalFile extends App {
 
   for (query <- Source.fromFile(filename).getLines()) {
     val tokens = query.trim.split(" ")
-    val matches = reader.getHypernyms(tokens)
+    val matches = reader.getRankedHypernyms(tokens)
     for (m <- matches) {
       val result = m.result.mkString(" ")
-      outfile.writeString(s"$query\t$result\t${m.count}\n", append = true)
+      outfile.writeString(s"$query\t$result\t${m.count}\t${reader.similarityScore(tokens, m.result)}\n", append = true)
     }
   }
 
