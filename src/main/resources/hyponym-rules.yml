@@ -1,6 +1,6 @@
 vars:
   result: "(?<result> [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
-  skipquantifier: "/(most|less|more|few|any|much|many|lots?|little|some|same|several|numerous|plenty|amounts?|major|minor|majority|number|multiple|range|variet(y|ies)|others?|additional|next|basic|whole|of|such|all|essential|necessary|specific|special|particular|certain|importan(t|ce)|significant|main|extreme|different|various|unusual|usual|common|general|familiar|small(er|est)?|big(ger|gest)?|large(r|st)?|old(er|est)?|young(er|est)?|new(er|est)?|own|event|types?|kinds?|examples?|sorts?|class(es)?|parts?|pieces?|members?|aspects?|components?|sets?|an?|the|wide)/{,5}"
+  skipquantifier: "/(most|less|more|few|any|much|many|lots?|little|some|same|several|numerous|plenty|amounts?|major|minor|majority|number|multiple|range|variet(y|ies)|others?|additional|next|basic|whole|of|such|all|essential|necessary|specific|special|particular|certain|importan(t|ce)|significant|main|extreme|different|various|unusual|usual|common|general|familiar|small(er|est)?|big(ger|gest)?|large(r|st)?|old(er|est)?|young(er|est)?|new(er|est)?|own|event|types?|kinds?|examples?|sorts?|class(es)?|parts?|pieces?|members?|aspects?|components?|sets?|an?|the|wide|only)/{,5}"
   skipmeronymy: "(?<! [lemma=/feature|property|aspect|component|characteristic/] []{,2})"
 rules:
   - name: hypo-1
@@ -19,3 +19,94 @@ rules:
       >nmod_including >/conj.*/?
       ${skipquantifier}
       ${result}
+
+  - name: hypo-3
+    type: basic  
+    pattern: |
+      ${query}
+      /,/? which /includes?/ /,/? 
+      ${skipquantifier} 
+      ${result}
+
+  - name: hypo-4
+    type: basic
+    pattern: |
+       ${result} 
+       [lemma=be] /(an?|the)/? 
+       ${query} 
+       that
+
+  - name: hypo-5
+    type: basic
+    pattern: |
+       ${query} 
+       <nmod_of 
+       [lemma=/example|type|kind|sort|class/] 
+       >nsubj 
+       ${skipquantifier}
+       ${result}
+
+  - name: hypo-6
+    type: basic  
+    pattern: |
+       ${query} 
+       >nmod_as 
+       ${skipquantifier} 
+       ${result}
+
+  - name: hypo-7
+    type: basic
+    pattern: |
+       ${skipquantifier} 
+       ${result} 
+       (is|are) the /(most|least)/? [tag = /JJ.*/] 
+       ${query}
+
+  - name: hypo-8
+    type: basic  
+    pattern: |
+       ${query} 
+       >amod >nmod_than 
+       ${skipquantifier} 
+       ${result}
+
+  - name: hypo-9
+    type: basic
+    pattern: |
+       ${query} 
+       >nmod_like 
+       ${skipquantifier} 
+       ${result}
+
+  - name: hypo-10
+    type: basic
+    pattern: |
+       (unlike|like) (most|all|any|other){,2} 
+       ${query} 
+       /,/? 
+       ${skipquantifier} 
+       ${result}
+
+  - name: hypo-11
+    type: basic
+    pattern: |
+       ${skipquantifier} 
+       ${result} 
+       [lemma =be] (also|all)? /(an?|the)/? 
+       ${skipmeronymy} 
+       ${query}
+
+  - name: hypo-12
+    type: basic
+    pattern: |
+       ${query} 
+       /,/? for example /,/? 
+       ${skipquantifier} 
+       ${result}
+
+  - name: hypo-13
+    type: basic
+    pattern: |
+       ${query} 
+       <nmod_of [word=case] >nsubj
+       ${result}
