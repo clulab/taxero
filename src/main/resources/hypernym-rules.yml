@@ -32,7 +32,8 @@ rules:
     type: basic
     pattern: |
       ${query}  
-      [lemma=be] /(an?|the)/? 
+      [lemma=be] /(an?|the)/?
+      ${skipquantifier} 
       ${result} 
       that
 
@@ -106,4 +107,5 @@ rules:
     pattern: |
       ${query} 
       <nsubj [word=case] >nmod_of 
+      ${skipquantifier}
       ${result}
