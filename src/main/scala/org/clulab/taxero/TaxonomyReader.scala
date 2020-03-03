@@ -123,8 +123,8 @@ class TaxonomyReader(
 
   def scoreMatch(query: Seq[String], m: Match): ScoredMatch = {
     val count = m.count
-    val similarity = similarityScore(query, m.result)
-    val score = count // FIXME we need better ranking
+    val similarity = 1e-4 + (1/(1+scala.math.exp(-(similarityScore(query, m.result)))))
+    val score = scala.math.log1p(count) * similarity
     ScoredMatch(query, m.result, count, similarity, score)
   }
 
