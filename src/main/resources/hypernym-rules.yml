@@ -1,18 +1,111 @@
 vars:
   result: "(?<result> [tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
-  skipquantifier: "/(most|less|more|few|any|much|many|lots?|little|some|same|several|numerous|plenty|amounts?|major|minor|majority|number|multiple|range|variet(y|ies)|others?|additional|next|basic|whole|of|such|all|essential|necessary|specific|special|particular|certain|importan(t|ce)|significant|main|extreme|different|various|unusual|usual|common|general|familiar|small(er|est)?|big(ger|gest)?|large(r|st)?|old(er|est)?|young(er|est)?|new(er|est)?|own|event|types?|kinds?|examples?|sorts?|class(es)?|parts?|pieces?|members?|aspects?|components?|sets?|an?|the|wide)/{,5}"
+  skipquantifier: "/(most|less|more|few|any|much|many|lots?|little|some|same|several|numerous|plenty|amounts?|major|minor|majority|number|multiple|range|variet(y|ies)|others?|additional|next|basic|whole|of|such|all|essential|necessary|specific|special|particular|certain|importan(t|ce)|significant|main|extreme|different|various|unusual|usual|common|general|familiar|small(er|est)?|big(ger|gest)?|large(r|st)?|old(er|est)?|young(er|est)?|new(er|est)?|own|event|types?|kinds?|examples?|sorts?|class(es)?|parts?|pieces?|members?|aspects?|components?|sets?|an?|the|wide|only)/{,5}"
   skipmeronymy: "(?<! [lemma=/feature|property|aspect|component|characteristic/] []{,2})"
 rules:
   - name: hyper-1
     type: basic
     pattern: |
-      ${query}                   # start from the specified query
-      </conj.*/? <nmod_such_as  # traverse this path
+      ${query}                     # start from the specified query
+      </conj.*/? <nmod_such_as     # traverse this path
       ${skipmeronymy}
-      ${skipquantifier}          # skip these words
-      ${result}                  # grab the result
+      ${skipquantifier}            # skip these words
+      ${result}                    # grab the result
 
   - name: hyper-2
     type: basic
     pattern: |
-      ${query} </conj.*/? <nmod_including ${result}
+      ${query} 
+      </conj.*/? <nmod_including 
+      ${skipquantifier} 
+      ${result}
+
+  - name: hyper-3
+    type: basic  
+    pattern: |
+      ${skipquantifier} 
+      ${result} 
+      /,/? which /includes?/ /,/? 
+      ${query}
+
+  - name: hyper-4
+    type: basic
+    pattern: |
+      ${query}  
+      [lemma=be] /(an?|the)/?
+      ${skipquantifier} 
+      ${result} 
+      that
+
+  - name: hyper-5
+    type: basic
+    pattern: |
+      ${query} 
+      <nsubj [lemma=/example|type|kind|sort|class/] >nmod_of 
+      ${skipquantifier} 
+      ${result}
+
+  - name: hyper-6
+    type: basic  
+    pattern: |
+      ${query} <nmod_as 
+      ${skipquantifier} 
+      ${result}
+
+  - name: hyper-7
+    type: basic
+    pattern: |
+      ${query} 
+      (is|are) the /(most|least)/? [tag = /JJ.*/] 
+      ${skipquantifier} 
+      ${result}
+
+  - name: hyper-8
+    type: basic  
+    pattern: |
+      ${query} 
+      <nmod_than <amod 
+      ${skipquantifier} 
+      ${result}  
+
+  - name: hyper-9
+    type: basic
+    pattern: |
+      ${query}  
+      <nmod_like
+      ${skipquantifier} 
+      ${result}
+ 
+  - name: hyper-10
+    type: basic
+    pattern: |
+      (unlike|like) (most|all|any|other){,2} 
+      ${result} 
+      /,/? 
+      ${skipquantifier} 
+      ${query}  
+
+  - name: hyper-11
+    type: basic
+    pattern: |
+      ${query} 
+      [lemma=be] (also|all)? /(an?|the)/? 
+      ${skipmeronymy} 
+      ${skipquantifier} 
+      ${result}	
+
+  - name: hyper-12
+    type: basic
+    pattern: |
+      ${skipquantifier} 
+      ${result}  
+      /,/? for example /,/? 
+      ${query}
+
+  - name: hyper-13
+    type: basic
+    pattern: |
+      ${query} 
+      <nsubj [word=case] >nmod_of 
+      ${skipquantifier}
+      ${result}
