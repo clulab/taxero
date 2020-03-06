@@ -7,10 +7,10 @@ $(document).ready(function () {
 
         // collect form data
         var query = $('#query').val();
-        var rule = $('#rule').val();
+        var rules = $('#rules').val();
         var formData = {
             'query': query,
-            'rule': rule
+            'rules': rules
         }
 
         if (!formData.query.trim()) {
@@ -28,7 +28,7 @@ $(document).ready(function () {
         // process the form
         $.ajax({
             type: 'GET',
-            url: 'customRule',
+            url: 'customRules',
             data: formData,
             dataType: 'json',
             encode: true
@@ -48,6 +48,7 @@ $(document).ready(function () {
                     { title: "query" },
                     { title: "result" },
                     { title: "count" },
+                    { title: "similarity" },
                     { title: "score" }
                 ]
             });

@@ -1,3 +1,0 @@
-${query} >nmod_such_as >conj? ${chunk}
-
-${query} >nmod_including >conj? ${chunk}
