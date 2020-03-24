@@ -1,7 +1,7 @@
-/* Formatting function for row details - modify as you need */
+/* Formatting function for row details - here the evidence */
 function format ( d ) {
 // `d` is the original data object for the row
-    var t = '<table cellpadding="1" cellspacing="0" border="0" style="padding-left:50px;">'
+    var t = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
     t = t + '<tr>' +
          '<td> DocID </td>' +
          '<td> Sentence Text </td>' +
@@ -13,12 +13,6 @@ function format ( d ) {
                 '</tr>';
     }
     return t + '</table>';
-    //return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'+
-    //    '<tr>'+
-    //        '<td>Sentence:</td>'+
-    //        '<td>'+d.evidence+'</td>'+
-    //    '</tr>'+
-    //'</table>';
 }
 
 $(document).ready(function () {
@@ -65,7 +59,7 @@ $(document).ready(function () {
         })
         .done(function (data) {
             console.log(data);
-            var table = $('#results').DataTable({
+            $('#results').DataTable({
                 data: data,
                 columns: [
                     {
@@ -81,29 +75,27 @@ $(document).ready(function () {
                     { data: "score" }
                 ]
             });
-
-
-
-            // Add event listener for opening and closing details
-            $('#results tbody').on('click', 'td.details-control', function () {
-                var tr = $(this).closest('tr');
-                var row = table.row( tr );
-
-                if ( row.child.isShown() ) {
-                    // This row is already open - close it
-                    row.child.hide();
-                    tr.removeClass('shown');
-                }
-                else {
-                    // Open this row
-                    row.child( format(row.data()) ).show();
-                    tr.addClass('shown');
-                }
-            } );
             // hide spinner
             document.getElementById("overlay").style.display = "none";
         });
 
     });
+
+    // Add event listener for opening and closing (evidence) details
+    $(document).on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = $('#results').DataTable().row( tr );
+
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            row.child( format(row.data()) ).show();
+            tr.addClass('shown');
+        }
+    } );
 
 });
