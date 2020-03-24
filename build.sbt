@@ -16,5 +16,3 @@ lazy val webapp = project
   .enablePlugins(PlayScala)
   .aggregate(core)
   .dependsOn(core)
-
-val becky = "XXX"
