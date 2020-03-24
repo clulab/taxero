@@ -8,6 +8,15 @@
     <script type="text/javascript" src="assets/javascripts/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="assets/javascripts/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="assets/javascripts/dev.js"></script>
+    <style>
+        td.details-control {
+            background: url('../resources/details_open.png') no-repeat center center;
+            cursor: pointer;
+        }
+        tr.shown td.details-control {
+            background: url('../resources/details_close.png') no-repeat center center;
+        }
+    </style>
 </head>
 
 <body>
@@ -40,6 +49,25 @@ rules:
 </form>
 
 <table id="results" class="display" width="100%"></table>
-
+<thead>
+<tr>
+    <th></th>
+    <th>Query</th>
+    <th>Result</th>
+    <th>Count</th>
+    <th>Similarity</th>
+    <th>Score</th>
+</tr>
+</thead>
+<tfoot>
+<tr>
+    <th></th>
+    <th>Query</th>
+    <th>Result</th>
+    <th>Count</th>
+    <th>Similarity</th>
+    <th>Score</th>
+</tr>
+</tfoot>
 </body>
 </html>
