@@ -31,13 +31,14 @@ object FilterNegativePairs extends App{
 
     for (line <- Source.fromFile(f).getLines()) {
       val tokens = line.trim.split("\t")
-      val hypo = tokens(0).trim.split(" ")
+      val hypo = tokens(0).toLowerCase().trim.split(" ")
       val hyper = tokens(1).trim.split(" ")
       val cos_sim = reader.similarityScore(hypo, hyper)
       //negfilteredfile.writeString(s"$line\t$cos_sim\n", append = true)
-      if (cos_sim > 0.25) {
+      if (cos_sim >= 0.25 && cos_sim <= 0.99) {
         negfilteredfile.writeString(s"$line\t$cos_sim\n", append = true)
       }
     }
   }
 }
+
