@@ -67,7 +67,7 @@ object GenerateDistantSupervisionData extends App with LazyLogging {
               }
         }
         () // deliverance of the (empty) future hopes and dreams
-      }
+
     }
     logger.debug("waiting for all futures")
     Await.result(futures, Duration.Inf)

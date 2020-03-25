@@ -47,6 +47,7 @@ $(document).ready(function () {
                     { title: "query" },
                     { title: "result" },
                     { title: "count" },
+                    { title: "similarity" },
                     { title: "score" }
                 ]
             });
