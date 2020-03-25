@@ -68,7 +68,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     val tokens = query.split(" ")
     val results = taxero.executeGivenRules(tokens, rules)
     println(s"num results: ${results.length}")
-    val json = JsonUtils.mkJsonDict(results.slice(0,3))
+    val json = JsonUtils.mkJsonDict(results)
     println(Json.prettyPrint(json))
     Ok(json)
   }
