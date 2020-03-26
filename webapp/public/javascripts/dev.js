@@ -1,3 +1,20 @@
+/* Formatting function for row details - here the evidence */
+function format ( d ) {
+// `d` is the original data object for the row
+    var t = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'
+    t = t + '<tr>' +
+         '<td> DocID </td>' +
+         '<td> Sentence Text </td>' +
+        '</tr>';
+    for (let i = 0; i < d.evidence.length; i++) {
+        t = t + '<tr>' +
+                 '<td>' + d.evidence[i].id + '</td>' +
+                 '<td>' + d.evidence[i].sentence + '</td>' +
+                '</tr>';
+    }
+    return t + '</table>';
+}
+
 $(document).ready(function () {
 
     $('form').submit(function (event) {
@@ -45,11 +62,17 @@ $(document).ready(function () {
             $('#results').DataTable({
                 data: data,
                 columns: [
-                    { title: "query" },
-                    { title: "result" },
-                    { title: "count" },
-                    { title: "similarity" },
-                    { title: "score" }
+                    {
+                        "className":      'details-control',
+                        "orderable":      false,
+                        "data":           null,
+                        "defaultContent": ''
+                    },
+                    { data: "query" },
+                    { data: "result" },
+                    { data: "count" },
+                    { data: "similarity" },
+                    { data: "score" }
                 ]
             });
             // hide spinner
@@ -57,5 +80,22 @@ $(document).ready(function () {
         });
 
     });
+
+    // Add event listener for opening and closing (evidence) details
+    $(document).on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = $('#results').DataTable().row( tr );
+
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            row.child( format(row.data()) ).show();
+            tr.addClass('shown');
+        }
+    } );
 
 });

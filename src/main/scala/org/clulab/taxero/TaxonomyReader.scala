@@ -12,10 +12,15 @@ import ai.lum.odinson.utils.QueryUtils
 import org.clulab.embeddings.word2vec.Word2Vec
 import org.clulab.processors.fastnlp.FastNLPProcessor
 
+
 case class Match(
   result: Seq[String],
   count: Int,
+  evidence: Seq[Evidence],
 )
+
+case class MatchTokensAndSentence(tokens: Seq[String], sentence: Evidence)
+case class Evidence(docID: Int, sentence: String)
 
 case class ScoredMatch(
   query: Seq[String],
@@ -23,6 +28,7 @@ case class ScoredMatch(
   count: Int,
   similarity: Double,
   score: Double, // this is the score used for ranking, probably made from count and similarity
+  evidence: Seq[Evidence], // this is for storing the sentences the extractions come from
 )
 
 object TaxonomyReader {
@@ -30,13 +36,15 @@ object TaxonomyReader {
     val config = ConfigFactory.load()
     val extractorEngine = ExtractorEngine.fromConfig
     val wordEmbeddings = new Word2Vec(config[String]("taxero.wordEmbeddings"))
-    new TaxonomyReader(extractorEngine, wordEmbeddings)
+    val numEvidenceDisplay = config.get[Int]("taxero.numEvidenceDisplay").getOrElse(3)
+    new TaxonomyReader(extractorEngine, wordEmbeddings, numEvidenceDisplay)
   }
 }
 
 class TaxonomyReader(
   val extractorEngine: ExtractorEngine,
   val wordEmbeddings: Word2Vec,
+  val numEvidenceDisplay: Int,
 ) {
 
   val proc = new FastNLPProcessor
@@ -73,7 +81,7 @@ class TaxonomyReader(
     for {
       q <- allQueries
       m <- getRankedHypernyms(q)                 // getHypernyms changed to getRankedHypernyms   
-    } hypernymCounts.add(m.result, m.count)
+    } hypernymCounts.add(m.result, m.count, Nil)
     // add the heads of each hypernym to the results
     for (candidate <- hypernymCounts.keys) {
       hypernymCounts.add(getHead(candidate))
@@ -94,17 +102,20 @@ class TaxonomyReader(
   def getMatches(extractors: Seq[Extractor]): Seq[Match] = {
     val matches = for (m <- extractorEngine.extractMentions(extractors)) yield getResultTokens(m)
     // count matches so that we can add them to the consolidator efficiently
-    val groupedMatches = matches.groupBy(identity).mapValues(_.length)
+    val groupedMatches = matches
+      .groupBy(_.tokens)
+      // get the count of how many times this result appeared and all the sentences where it happened
+      .mapValues(vs => (vs.length, vs.map(v => v.sentence)))
     // count matches and return them
     val consolidator = new Consolidator(proc)
-    for ((tokens, count) <- groupedMatches.toSeq) {
-      consolidator.add(tokens, count)
+    for ((tokens, (count, sentences)) <- groupedMatches.toSeq) {
+      consolidator.add(tokens, count, sentences)
     }
     // return results
     consolidator.getMatches
   }
 
-  def getResultTokens(mention: Mention): Seq[String] = {
+  def getResultTokens(mention: Mention): MatchTokensAndSentence = {
     val args = mention.odinsonMatch.arguments
     val m = args.get("result") match {
       // if there is a captured mention called "result" then that's the result
@@ -112,7 +123,11 @@ class TaxonomyReader(
       // if there is no named result, then use the whole match as the result
       case None => mention.odinsonMatch
     }
-    extractorEngine.getTokens(mention.luceneDocId, m)
+    val tokens = extractorEngine.getTokens(mention.luceneDocId, m)
+    val sentence = extractorEngine
+      .getTokens(mention.luceneDocId, extractorEngine.displayField)
+      .mkString(" ")
+    MatchTokensAndSentence(tokens, Evidence(mention.luceneDocId, sentence))
   }
 
   def rankMatches(query: Seq[String], matches: Seq[Match]): Seq[ScoredMatch] = {
@@ -123,9 +138,10 @@ class TaxonomyReader(
 
   def scoreMatch(query: Seq[String], m: Match): ScoredMatch = {
     val count = m.count
+    val evidence = m.evidence.slice(0, numEvidenceDisplay)
     val similarity = 1e-4 + (1/(1+scala.math.exp(-(similarityScore(query, m.result)))))
     val score = scala.math.log1p(count) * similarity
-    ScoredMatch(query, m.result, count, similarity, score)
+    ScoredMatch(query, m.result, count, similarity, score, evidence)
   }
 
   def mkEmbedding(tokens: Seq[String]): Array[Double] = {

@@ -17,7 +17,7 @@ class Counter {
   def getMatches: Seq[Match] = {
     counts
       .toIterator
-      .map { case (m, c) => Match(m, c) }
+      .map { case (m, c) => Match(m, c, Nil) }
       .toSeq
   }
 

@@ -5,6 +5,8 @@ import play.api.mvc._
 import play.api.libs.json._
 import org.clulab.taxero._
 
+import scala.collection.mutable
+
 /**
  * This controller creates an `Action` to handle HTTP requests to the
  * application's home page.
@@ -65,7 +67,8 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     // println(s"[DEV] Query: <<$query>>\tRULE: <<$rule>>")
     val tokens = query.split(" ")
     val results = taxero.executeGivenRules(tokens, rules)
-    val json = JsonUtils.mkJson(results)
+    println(s"num results: ${results.length}")
+    val json = JsonUtils.mkJsonDict(results)
     Ok(json)
   }
 

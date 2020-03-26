@@ -22,4 +22,28 @@ object JsonUtils {
     )
   }
 
+  def mkJsonDict(ms: Seq[ScoredMatch]): JsValue = {
+//    Json.obj(
+//      "data" -> Json.arr(ms.map(mkJsonDict): _*)
+//    )
+    Json.arr(ms.map(mkJsonDict): _*)
+  }
+  def mkJsonDict(m: ScoredMatch): Json.JsValueWrapper = {
+    Json.obj(
+      "query"  -> m.query.mkString(" "),
+      "result" -> m.result.mkString(" "),
+      "count" -> m.count.toString,
+      "similarity" -> m.similarity.toString,
+      "score" -> m.score.toString,
+      "evidence" -> m.evidence.map(mkJsonEvidence),
+    )
+  }
+
+  def mkJsonEvidence(e: Evidence): JsValue = {
+    Json.obj(
+      "id" -> e.docID,
+      "sentence" -> e.sentence
+    )
+  }
+
 }
