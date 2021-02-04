@@ -16,11 +16,11 @@ import org.clulab.processors.fastnlp.FastNLPProcessor
 case class Match(
   result: Seq[String],
   count: Int,
-  evidence: Seq[Evidence],
+  evidence: Seq[Evidence]
 )
 
 case class MatchTokensAndSentence(tokens: Seq[String], sentence: Evidence)
-case class Evidence(docID: Int, sentence: String)
+case class Evidence(docID: Int, sentence: String, foundBy: String)
 
 case class ScoredMatch(
   query: Seq[String],
@@ -100,6 +100,7 @@ class TaxonomyReader(
   }
 
   def getMatches(extractors: Seq[Extractor]): Seq[Match] = {
+
     val matches = for (m <- extractorEngine.extractMentions(extractors)) yield getResultTokens(m)
     // count matches so that we can add them to the consolidator efficiently
     val groupedMatches = matches
@@ -127,7 +128,7 @@ class TaxonomyReader(
     val sentence = extractorEngine
       .getTokens(mention.luceneDocId, extractorEngine.displayField)
       .mkString(" ")
-    MatchTokensAndSentence(tokens, Evidence(mention.luceneDocId, sentence))
+    MatchTokensAndSentence(tokens, Evidence(mention.luceneDocId, sentence, mention.foundBy))
   }
 
   def rankMatches(query: Seq[String], matches: Seq[Match]): Seq[ScoredMatch] = {
